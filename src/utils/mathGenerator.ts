@@ -142,22 +142,38 @@ function generateEquationX(): MathQuestion {
 }
 
 /**
- * 算数問題セット（10問）を生成
+ * 選択されたモードに応じた算数問題セット（10問）を生成
  */
-export function generateMathQuiz(): MathQuestion[] {
-  const questions: MathQuestion[] = [
-    generateCarryAdd(),
-    generateBorrowSub(),
-    generateMultiply12x12(),
-    generateMatchTarget(),
-    generateEquationX(),
-    generateCarryAdd(),
-    generateBorrowSub(),
-    generateMultiply12x12(),
-    generateMatchTarget(),
-    generateEquationX(),
-  ];
+export function generateMathQuiz(mode: string = 'all'): MathQuestion[] {
+  const questions: MathQuestion[] = [];
 
-  // シャッフルして返す
+  for (let i = 0; i < 10; i++) {
+    switch (mode) {
+      case 'carry_add':
+        questions.push(generateCarryAdd());
+        break;
+      case 'borrow_sub':
+        questions.push(generateBorrowSub());
+        break;
+      case 'multiply_12x12':
+        questions.push(generateMultiply12x12());
+        break;
+      case 'match_target':
+        questions.push(generateMatchTarget());
+        break;
+      case 'equation_x':
+        questions.push(generateEquationX());
+        break;
+      case 'all':
+      default: {
+        const types = [generateCarryAdd, generateBorrowSub, generateMultiply12x12, generateMatchTarget, generateEquationX];
+        const fn = types[i % types.length];
+        questions.push(fn());
+        break;
+      }
+    }
+  }
+
+  // ランダム順にして返す
   return questions.sort(() => 0.5 - Math.random());
 }

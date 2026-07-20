@@ -8,10 +8,11 @@ interface MathGameProps {
 }
 
 export const MathGame: React.FC<MathGameProps> = ({ onComplete }) => {
-  const [questions] = useState<MathQuestion[]>(() => generateMathQuiz());
+  const [selectedMode, setSelectedMode] = useState<string | null>(null);
+  const [questions, setQuestions] = useState<MathQuestion[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [inputVal, setInputVal] = useState('');
-  const [startTime] = useState<number>(Date.now());
+  const [startTime, setStartTime] = useState<number>(Date.now());
   const [questionStartTime, setQuestionStartTime] = useState<number>(Date.now());
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [errorCount, setErrorCount] = useState(0);
@@ -19,19 +20,32 @@ export const MathGame: React.FC<MathGameProps> = ({ onComplete }) => {
   const [feedback, setFeedback] = useState<'correct' | 'wrong' | null>(null);
 
   const inputRef = useRef<HTMLInputElement>(null);
-  const currentQuestion = questions[currentIndex];
+
+  // モード決定処理
+  const handleSelectMode = (mode: string) => {
+    setSelectedMode(mode);
+    const qList = generateMathQuiz(mode);
+    setQuestions(qList);
+    setStartTime(Date.now());
+    setQuestionStartTime(Date.now());
+  };
 
   // タイマー
   useEffect(() => {
+    if (!selectedMode) return;
     const interval = setInterval(() => {
       setElapsedSeconds(Math.floor((Date.now() - startTime) / 1000));
     }, 500);
     return () => clearInterval(interval);
-  }, [startTime]);
+  }, [selectedMode, startTime]);
 
   useEffect(() => {
-    inputRef.current?.focus();
-  }, [currentIndex]);
+    if (selectedMode) {
+      inputRef.current?.focus();
+    }
+  }, [selectedMode, currentIndex]);
+
+  const currentQuestion = questions[currentIndex];
 
   const handleAnswerSubmit = (userAnswer: string) => {
     if (!userAnswer.trim()) return;
@@ -69,7 +83,7 @@ export const MathGame: React.FC<MathGameProps> = ({ onComplete }) => {
           const payload: SaveSessionPayload = {
             userId: 1,
             subject: 'math',
-            mode: 'math_drill',
+            mode: selectedMode || 'math_drill',
             score,
             totalQuestions,
             correctCount,
@@ -107,6 +121,51 @@ export const MathGame: React.FC<MathGameProps> = ({ onComplete }) => {
     }
   };
 
+  // 1. モード選択画面
+  if (!selectedMode) {
+    const modes = [
+      { id: 'carry_add', title: 'くりあがり たしざん', desc: '2〜4けたのたしざん (10もん)', color: 'from-emerald-500 to-teal-600' },
+      { id: 'borrow_sub', title: 'くりさがり ひきざん', desc: '2〜4けたのひきざん (10もん)', color: 'from-blue-500 to-indigo-600' },
+      { id: 'multiply_12x12', title: 'かけざん (12×12)', desc: '1×1 から 12×12 まで (10もん)', color: 'from-amber-500 to-orange-600' },
+      { id: 'match_target', title: 'えらぶ かけざん', desc: 'こたえが○になるしきをえらぶ (10もん)', color: 'from-purple-500 to-pink-600' },
+      { id: 'equation_x', title: 'あなうめ・ぎゃくさん', desc: 'x × 3 = 6 の x をもとめる (10もん)', color: 'from-rose-500 to-red-600' },
+      { id: 'all', title: 'ぜんぶミックス', desc: 'すべてのタイプからランダム (10もん)', color: 'from-sky-500 to-cyan-600' },
+    ];
+
+    return (
+      <div className="max-w-3xl mx-auto space-y-6">
+        <div className="text-center bg-slate-900 rounded-2xl p-6 border border-slate-700">
+          <div className="inline-flex p-3 bg-emerald-500/20 text-emerald-400 rounded-xl mb-2">
+            <Calculator className="w-8 h-8" />
+          </div>
+          <h2 className="text-2xl font-bold text-white mb-1">さんすうのモードをえらぼう</h2>
+          <p className="text-slate-400 text-sm">チャレンジしたい出題形式をタップしてください（各10問）</p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {modes.map((m) => (
+            <div
+              key={m.id}
+              onClick={() => handleSelectMode(m.id)}
+              className="group bg-slate-900/90 hover:bg-slate-800 border border-slate-700 hover:border-emerald-400 rounded-2xl p-5 cursor-pointer transition duration-200 shadow-lg flex items-center justify-between"
+            >
+              <div>
+                <h3 className="text-lg font-bold text-white group-hover:text-emerald-300 transition">
+                  {m.title}
+                </h3>
+                <p className="text-xs text-slate-400 mt-1">{m.desc}</p>
+              </div>
+              <div className={`p-3 rounded-xl bg-gradient-to-br ${m.color} text-white shadow-md group-hover:scale-105 transition`}>
+                <ArrowRight className="w-5 h-5" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // 2. 算数ドリル問題画面
   const progressPercent = Math.round(((currentIndex + 1) / questions.length) * 100);
 
   return (
