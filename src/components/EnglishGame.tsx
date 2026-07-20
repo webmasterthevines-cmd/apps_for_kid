@@ -18,7 +18,7 @@ export const EnglishGame: React.FC<EnglishGameProps> = ({ onComplete }) => {
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [errorCount, setErrorCount] = useState(0);
   const [details, setDetails] = useState<QuestionDetail[]>([]);
-  const [feedback, setFeedback] = useState<'correct' | 'wrong' | null>(null);
+  const [feedback, setFeedback] = useState<'correct' | 'wrong' | 'skipped' | null>(null);
   const [currentOptions, setCurrentOptions] = useState<string[]>([]);
 
   const inputRef = useRef<HTMLInputElement>(null);
@@ -137,6 +137,9 @@ export const EnglishGame: React.FC<EnglishGameProps> = ({ onComplete }) => {
   const handleSkipQuestion = () => {
     if (feedback) return;
 
+    setFeedback('skipped');
+    speakEnglishText(currentQuestion.word);
+
     const responseTimeMs = Date.now() - questionStartTime;
     const newDetail: QuestionDetail = {
       questionText: currentQuestion.word,
@@ -150,33 +153,36 @@ export const EnglishGame: React.FC<EnglishGameProps> = ({ onComplete }) => {
     setDetails(updatedDetails);
     setErrorCount((prev) => prev + 1);
 
-    setInputVal('');
-    if (currentIndex + 1 < questions.length) {
-      setCurrentIndex((prev) => prev + 1);
-      setQuestionStartTime(Date.now());
-    } else {
-      // 全10問完了
-      const finalDuration = Math.max(1, Math.floor((Date.now() - startTime) / 1000));
-      const totalQuestions = questions.length;
-      const correctCount = updatedDetails.filter(d => d.isCorrect).length;
-      const accuracy = Math.round((correctCount / totalQuestions) * 100) || 0;
-      const score = Math.max(0, Math.round((correctCount * 100) - (errorCount * 20) + Math.max(0, 300 - finalDuration)));
+    setTimeout(() => {
+      setFeedback(null);
+      setInputVal('');
+      if (currentIndex + 1 < questions.length) {
+        setCurrentIndex((prev) => prev + 1);
+        setQuestionStartTime(Date.now());
+      } else {
+        // 全10問完了
+        const finalDuration = Math.max(1, Math.floor((Date.now() - startTime) / 1000));
+        const totalQuestions = questions.length;
+        const correctCount = updatedDetails.filter(d => d.isCorrect).length;
+        const accuracy = Math.round((correctCount / totalQuestions) * 100) || 0;
+        const score = Math.max(0, Math.round((correctCount * 100) - (errorCount * 20) + Math.max(0, 300 - finalDuration)));
 
-      const payload: SaveSessionPayload = {
-        userId: 1,
-        subject: 'english',
-        mode: selectedMode || 'english_quiz',
-        score,
-        totalQuestions,
-        correctCount,
-        accuracy,
-        wpm: 0,
-        durationSeconds: finalDuration,
-        details: updatedDetails,
-      };
+        const payload: SaveSessionPayload = {
+          userId: 1,
+          subject: 'english',
+          mode: selectedMode || 'english_quiz',
+          score,
+          totalQuestions,
+          correctCount,
+          accuracy,
+          wpm: 0,
+          durationSeconds: finalDuration,
+          details: updatedDetails,
+        };
 
-      onComplete(payload);
-    }
+        onComplete(payload);
+      }
+    }, 1800);
   };
 
   // 1. モード選択画面
@@ -293,6 +299,13 @@ export const EnglishGame: React.FC<EnglishGameProps> = ({ onComplete }) => {
         {feedback === 'wrong' && (
           <div className="absolute inset-0 bg-rose-950/95 flex items-center justify-center gap-2 text-rose-400 font-extrabold text-3xl">
             <XCircle className="w-10 h-10" /> Try Again!
+          </div>
+        )}
+        {feedback === 'skipped' && (
+          <div className="absolute inset-0 bg-sky-950/95 flex flex-col items-center justify-center gap-1 text-sky-300 font-extrabold">
+            <div className="text-xs text-sky-400">Skipped</div>
+            <div className="text-3xl text-amber-300 font-mono tracking-wider">{currentQuestion.word}</div>
+            <div className="text-xs text-slate-400">🔊 Listen & Learn!</div>
           </div>
         )}
       </div>

@@ -84,7 +84,13 @@ export const TypingGame: React.FC<TypingGameProps> = ({ onComplete }) => {
     }
   };
 
+  const [isSkipped, setIsSkipped] = useState(false);
+
   const handleSkipQuestion = () => {
+    if (isSkipped) return;
+    setIsSkipped(true);
+    speakEnglishText(currentQuestion.word);
+
     const responseTimeMs = Date.now() - wordStartTime;
     const newDetail: QuestionDetail = {
       questionText: currentQuestion.word,
@@ -98,13 +104,16 @@ export const TypingGame: React.FC<TypingGameProps> = ({ onComplete }) => {
     setDetails(updatedDetails);
     setErrorCount((prev) => prev + 1);
 
-    setInputVal('');
-    if (currentIndex + 1 < questions.length) {
-      setCurrentIndex((prev) => prev + 1);
-      setWordStartTime(Date.now());
-    } else {
-      finishGame(updatedDetails);
-    }
+    setTimeout(() => {
+      setIsSkipped(false);
+      setInputVal('');
+      if (currentIndex + 1 < questions.length) {
+        setCurrentIndex((prev) => prev + 1);
+        setWordStartTime(Date.now());
+      } else {
+        finishGame(updatedDetails);
+      }
+    }, 1800);
   };
 
   const finishGame = (finalDetails: QuestionDetail[]) => {
@@ -207,6 +216,15 @@ export const TypingGame: React.FC<TypingGameProps> = ({ onComplete }) => {
             );
           })}
         </div>
+
+        {/* スキップ時正解表示オーバーレイ */}
+        {isSkipped && (
+          <div className="absolute inset-0 bg-sky-950/95 flex flex-col items-center justify-center gap-1 text-sky-300 font-bold z-10">
+            <div className="text-xs text-sky-400">Skipped</div>
+            <div className="text-3xl text-amber-300 font-mono tracking-wider">{currentQuestion.word}</div>
+            <div className="text-xs text-slate-400 font-sans">🔊 Listen & Remember!</div>
+          </div>
+        )}
       </div>
 
       {/* 入力フォーム */}
