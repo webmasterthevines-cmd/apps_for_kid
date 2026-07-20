@@ -1,6 +1,8 @@
 import { TypingWord } from '../types';
 
 export const TYPING_WORDS: TypingWord[] = [
+  // --- レベル1: 初級 (英検5級・小3〜4レベル) ---
+
   // 1. フルーツ・食べ物 (fruit)
   { id: '1', word: 'apple', meaning: 'りんご', category: 'fruit' },
   { id: '2', word: 'banana', meaning: 'バナナ', category: 'fruit' },
@@ -54,7 +56,7 @@ export const TYPING_WORDS: TypingWord[] = [
   { id: '44', word: 'baseball', meaning: 'やきゅう', category: 'sports' },
   { id: '45', word: 'tennis', meaning: 'テニス', category: 'sports' },
 
-  // 5. 動詞 (verb)
+  // 5. 動詞 (verb - 初級)
   { id: '46', word: 'run', meaning: 'はしる', category: 'verb' },
   { id: '47', word: 'walk', meaning: 'あるく', category: 'verb' },
   { id: '48', word: 'jump', meaning: 'ジャンプする', category: 'verb' },
@@ -72,7 +74,7 @@ export const TYPING_WORDS: TypingWord[] = [
   { id: '60', word: 'look', meaning: 'みる', category: 'verb' },
   { id: '61', word: 'make', meaning: 'つくる', category: 'verb' },
 
-  // 6. 一般名詞・時間・形容詞 (general)
+  // 6. 一般名詞・時間・形容詞 (general - 初級)
   { id: '62', word: 'today', meaning: 'きょう', category: 'general' },
   { id: '63', word: 'tomorrow', meaning: 'あした', category: 'general' },
   { id: '64', word: 'yesterday', meaning: 'きのう', category: 'general' },
@@ -86,17 +88,63 @@ export const TYPING_WORDS: TypingWord[] = [
   { id: '72', word: 'fast', meaning: 'はやい', category: 'general' },
   { id: '73', word: 'slow', meaning: 'ゆっくり', category: 'general' },
 
-  // 7. 英文フレーズ・日常会話 (sentence)
-  { id: '74', word: 'I like apples.', meaning: 'わたしはりんごがすきです。', category: 'sentence' },
-  { id: '75', word: 'This is a cat.', meaning: 'これはねこです。', category: 'sentence' },
-  { id: '76', word: 'Good morning!', meaning: 'おはよう！', category: 'sentence' },
-  { id: '77', word: 'Thank you very much.', meaning: 'ありがとうございます。', category: 'sentence' },
-  { id: '78', word: 'Let us study hard.', meaning: 'べんきょうをがんばろう。', category: 'sentence' },
-  { id: '79', word: 'How are you today?', meaning: 'きょうのごきげんはいかがですか？', category: 'sentence' },
-  { id: '80', word: 'I play soccer.', meaning: 'ぼくはサッカーをします。', category: 'sentence' },
-  { id: '81', word: 'See you tomorrow!', meaning: 'またあした！', category: 'sentence' },
-  { id: '82', word: 'We love English.', meaning: 'わたしたちはえいごがだいすきです。', category: 'sentence' },
-  { id: '83', word: 'Have a nice day!', meaning: 'よい１にちを！', category: 'sentence' },
-  { id: '84', word: 'What time is it?', meaning: 'いまなんじですか？', category: 'sentence' },
-  { id: '85', word: 'Nice to meet you.', meaning: 'はじめまして。', category: 'sentence' }
+  // --- レベル2: 中級 (英検4級・小5〜中1レベル) 追加部分 ---
+
+  // 7. 中級名詞・場所・社会 (school / general / nature)
+  { id: '74', word: 'computer', meaning: 'コンピューター', category: 'school' },
+  { id: '75', word: 'library', meaning: 'としょかん', category: 'school' },
+  { id: '76', word: 'hospital', meaning: 'びょういん', category: 'general' },
+  { id: '77', word: 'station', meaning: 'えき', category: 'general' },
+  { id: '78', word: 'mountain', meaning: 'やま', category: 'nature' },
+  { id: '79', word: 'weather', meaning: 'てんき', category: 'nature' },
+  { id: '80', word: 'season', meaning: 'きせつ', category: 'nature' },
+  { id: '81', word: 'country', meaning: 'くに', category: 'general' },
+  { id: '82', word: 'language', meaning: 'げんご', category: 'school' },
+  { id: '83', word: 'subject', meaning: 'きょうか・かもく', category: 'school' },
+  { id: '84', word: 'calendar', meaning: 'カレンダー', category: 'school' },
+  { id: '85', word: 'dictionary', meaning: 'じしょ', category: 'school' },
+
+  // 8. 中級動詞 (verb - 中級)
+  { id: '86', word: 'understand', meaning: 'りかいする', category: 'verb' },
+  { id: '87', word: 'remember', meaning: 'おぼえている・おもいだす', category: 'verb' },
+  { id: '88', word: 'practice', meaning: 'れんしゅうする', category: 'verb' },
+  { id: '89', word: 'discover', meaning: 'はっけんする', category: 'verb' },
+  { id: '90', word: 'travel', meaning: 'りょこうする', category: 'verb' },
+  { id: '91', word: 'enjoy', meaning: 'たのしむ', category: 'verb' },
+  { id: '92', word: 'choose', meaning: 'えらぶ', category: 'verb' },
+  { id: '93', word: 'explain', meaning: 'せつめいする', category: 'verb' },
+  { id: '94', word: 'finish', meaning: 'おわる・かんりょうする', category: 'verb' },
+  { id: '95', word: 'become', meaning: 'になる', category: 'verb' },
+
+  // 9. 中級形容詞・副詞 (general - 中級)
+  { id: '96', word: 'important', meaning: 'たいせつな', category: 'general' },
+  { id: '97', word: 'beautiful', meaning: 'うつくしい', category: 'general' },
+  { id: '98', word: 'difficult', meaning: 'むずかしい', category: 'general' },
+  { id: '99', word: 'interesting', meaning: 'おもしろい・きょうみぶかい', category: 'general' },
+  { id: '100', word: 'popular', meaning: 'にんきのある', category: 'general' },
+  { id: '101', word: 'always', meaning: 'いつも・つねに', category: 'general' },
+  { id: '102', word: 'sometimes', meaning: 'ときどき', category: 'general' },
+  { id: '103', word: 'together', meaning: 'いっしょに', category: 'general' },
+
+  // 10. 英文フレーズ (sentence - 初級〜中級)
+  { id: '104', word: 'I like apples.', meaning: 'わたしはりんごがすきです。', category: 'sentence' },
+  { id: '105', word: 'This is a cat.', meaning: 'これはねこです。', category: 'sentence' },
+  { id: '106', word: 'Good morning!', meaning: 'おはよう！', category: 'sentence' },
+  { id: '107', word: 'Thank you very much.', meaning: 'ありがとうございます。', category: 'sentence' },
+  { id: '108', word: 'Let us study hard.', meaning: 'べんきょうをがんばろう。', category: 'sentence' },
+  { id: '109', word: 'How are you today?', meaning: 'きょうのごきげんはいかがですか？', category: 'sentence' },
+  { id: '110', word: 'I play soccer.', meaning: 'ぼくはサッカーをします。', category: 'sentence' },
+  { id: '111', word: 'See you tomorrow!', meaning: 'またあした！', category: 'sentence' },
+  { id: '112', word: 'We love English.', meaning: 'わたしたちはえいごがだいすきです。', category: 'sentence' },
+  { id: '113', word: 'Have a nice day!', meaning: 'よい１にちを！', category: 'sentence' },
+  { id: '114', word: 'What time is it?', meaning: 'いまなんじですか？', category: 'sentence' },
+  { id: '115', word: 'Nice to meet you.', meaning: 'はじめまして。', category: 'sentence' },
+  { id: '116', word: 'Where do you live?', meaning: 'どこにすんでいますか？', category: 'sentence' },
+  { id: '117', word: 'What is your favorite subject?', meaning: 'すきなきょうかはなんですか？', category: 'sentence' },
+  { id: '118', word: 'I want to be a doctor.', meaning: 'わたしはいしゃになりたいです。', category: 'sentence' },
+  { id: '119', word: 'Practice makes perfect.', meaning: 'けいけんはちからなり。', category: 'sentence' },
+  { id: '120', word: 'Can you help me please?', meaning: 'てつだっていただけますか？', category: 'sentence' },
+  { id: '121', word: 'Welcome to our town.', meaning: 'わたしたちのまちへようこそ。', category: 'sentence' },
+  { id: '122', word: 'I am studying English now.', meaning: 'わたしはいまえいごをべんきょうしています。', category: 'sentence' },
+  { id: '123', word: 'She plays the piano very well.', meaning: 'かのじょはピアノがとてもじょうずです。', category: 'sentence' }
 ];
