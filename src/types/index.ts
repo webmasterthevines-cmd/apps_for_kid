@@ -2,7 +2,7 @@ export interface TypingWord {
   id: string;
   word: string;
   meaning: string;
-  category: 'fruit' | 'animal' | 'school' | 'nature' | 'sports' | 'sentence';
+  category: 'fruit' | 'animal' | 'school' | 'nature' | 'sports' | 'verb' | 'general' | 'sentence';
 }
 
 export interface QuestionDetail {
