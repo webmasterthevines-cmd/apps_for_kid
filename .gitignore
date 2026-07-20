@@ -1,0 +1,18 @@
+# Dependencies
+node_modules/
+
+# Production build
+dist/
+
+# Scratch & logs
+scratch/
+*.log
+
+# Databases
+*.db
+*.sqlite
+
+# OS & IDE
+.DS_Store
+.vscode/
+.idea/
