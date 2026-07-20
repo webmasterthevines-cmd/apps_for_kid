@@ -29,11 +29,11 @@ export const TopView: React.FC<TopViewProps> = ({ onSelectApp, onGoAnalytics }) 
     {
       id: 'english',
       title: 'えいごクイズ',
-      description: 'えい単語のリスニングとスペルあてクイズ！',
+      description: 'おんせいリスニングと単語クイズ・スペル当て！',
       icon: BookOpen,
       color: 'from-amber-500 to-orange-600',
-      available: false,
-      tag: 'じゅんび中',
+      available: true,
+      tag: 'おすすめ',
     },
   ];
 

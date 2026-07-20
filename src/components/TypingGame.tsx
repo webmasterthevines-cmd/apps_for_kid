@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { TYPING_WORDS } from '../data/typingWords';
 import { QuestionDetail, SaveSessionPayload, TypingWord } from '../types';
 import { calculateWPM, calculateAccuracy, calculateScore } from '../utils/typingCalculator';
-import { Keyboard } from 'lucide-react';
+import { speakEnglishText } from '../utils/speechUtils';
+import { Keyboard, Volume2 } from 'lucide-react';
 
 interface TypingGameProps {
   onComplete: (payload: SaveSessionPayload) => void;
@@ -141,9 +142,18 @@ export const TypingGame: React.FC<TypingGameProps> = ({ onComplete }) => {
 
       {/* 出題カード (whitespace-pre によりスペースが崩れるのを防止) */}
       <div className="bg-slate-900 rounded-xl p-8 text-center border border-slate-700 mb-6 relative overflow-hidden">
-        <span className="inline-block bg-sky-900/60 text-sky-300 text-xs px-3 py-1 rounded-full mb-2 font-medium">
-          {currentQuestion.category.toUpperCase()}
-        </span>
+        <div className="flex items-center justify-between mb-2">
+          <span className="inline-block bg-sky-900/60 text-sky-300 text-xs px-3 py-1 rounded-full font-medium">
+            {currentQuestion.category.toUpperCase()}
+          </span>
+          <button
+            type="button"
+            onClick={() => speakEnglishText(currentQuestion.word)}
+            className="inline-flex items-center gap-1 bg-slate-800 hover:bg-slate-700 text-sky-300 text-xs px-3 py-1 rounded-full transition"
+          >
+            <Volume2 className="w-3.5 h-3.5" /> おんせい
+          </button>
+        </div>
         <div className="text-4xl font-extrabold tracking-widest my-3 font-mono whitespace-pre flex justify-center flex-wrap">
           {currentQuestion.word.split('').map((char: string, i: number) => {
             let color = 'text-slate-500';

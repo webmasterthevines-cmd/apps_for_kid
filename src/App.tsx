@@ -2,12 +2,13 @@ import { useState } from 'react';
 import { TopView } from './components/TopView';
 import { TypingGame } from './components/TypingGame';
 import { MathGame } from './components/MathGame';
+import { EnglishGame } from './components/EnglishGame';
 import { ResultView } from './components/ResultView';
 import { AnalyticsView } from './components/AnalyticsView';
 import { SaveSessionPayload } from './types';
 import { Sparkles, BarChart2, Home } from 'lucide-react';
 
-type ScreenState = 'top' | 'typing' | 'math' | 'result' | 'analytics';
+type ScreenState = 'top' | 'typing' | 'math' | 'english' | 'result' | 'analytics';
 
 export function App() {
   const [screen, setScreen] = useState<ScreenState>('top');
@@ -18,6 +19,8 @@ export function App() {
       setScreen('typing');
     } else if (appId === 'math') {
       setScreen('math');
+    } else if (appId === 'english') {
+      setScreen('english');
     }
   };
 
@@ -31,6 +34,8 @@ export function App() {
     setSessionPayload(null);
     if (currentSubject === 'math') {
       setScreen('math');
+    } else if (currentSubject === 'english') {
+      setScreen('english');
     } else {
       setScreen('typing');
     }
@@ -89,6 +94,7 @@ export function App() {
         )}
         {screen === 'typing' && <TypingGame onComplete={handleGameComplete} />}
         {screen === 'math' && <MathGame onComplete={handleGameComplete} />}
+        {screen === 'english' && <EnglishGame onComplete={handleGameComplete} />}
         {screen === 'result' && sessionPayload && (
           <ResultView
             payload={sessionPayload}
