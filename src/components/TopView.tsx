@@ -23,8 +23,8 @@ export const TopView: React.FC<TopViewProps> = ({ onSelectApp, onGoAnalytics }) 
       description: 'くりあがり・くりさがり・九九・あなうめけいさん！',
       icon: Calculator,
       color: 'from-emerald-500 to-teal-600',
-      available: false,
-      tag: 'じゅんび中',
+      available: true,
+      tag: 'おすすめ',
     },
     {
       id: 'english',

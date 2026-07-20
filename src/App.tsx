@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { TopView } from './components/TopView';
 import { TypingGame } from './components/TypingGame';
+import { MathGame } from './components/MathGame';
 import { ResultView } from './components/ResultView';
 import { AnalyticsView } from './components/AnalyticsView';
 import { SaveSessionPayload } from './types';
 import { Sparkles, BarChart2, Home } from 'lucide-react';
 
-type ScreenState = 'top' | 'typing' | 'result' | 'analytics';
+type ScreenState = 'top' | 'typing' | 'math' | 'result' | 'analytics';
 
 export function App() {
   const [screen, setScreen] = useState<ScreenState>('top');
@@ -15,6 +16,8 @@ export function App() {
   const handleSelectApp = (appId: string) => {
     if (appId === 'typing') {
       setScreen('typing');
+    } else if (appId === 'math') {
+      setScreen('math');
     }
   };
 
@@ -24,8 +27,13 @@ export function App() {
   };
 
   const handleRetry = () => {
+    const currentSubject = sessionPayload?.subject;
     setSessionPayload(null);
-    setScreen('typing');
+    if (currentSubject === 'math') {
+      setScreen('math');
+    } else {
+      setScreen('typing');
+    }
   };
 
   return (
@@ -80,6 +88,7 @@ export function App() {
           />
         )}
         {screen === 'typing' && <TypingGame onComplete={handleGameComplete} />}
+        {screen === 'math' && <MathGame onComplete={handleGameComplete} />}
         {screen === 'result' && sessionPayload && (
           <ResultView
             payload={sessionPayload}
