@@ -40,15 +40,14 @@ export const EnglishGame: React.FC<EnglishGameProps> = ({ onComplete }) => {
     // 初回音声発話
     speakEnglishText(currentQ.word);
 
-    // 4択クイズの選択肢生成 (日本語意味または単語)
+    // 4択クイズの選択肢生成 (日本語訳を使わず全て英語表記)
     if (selectedMode === 'listening_choice' || selectedMode === 'word_choice') {
-      const isMeaningChoice = true;
-      const correctText = isMeaningChoice ? currentQ.meaning : currentQ.word;
+      const correctText = currentQ.word;
       
       const wrongOptions: string[] = [];
       while (wrongOptions.length < 3) {
         const dummy = TYPING_WORDS[Math.floor(Math.random() * TYPING_WORDS.length)];
-        const dummyText = isMeaningChoice ? dummy.meaning : dummy.word;
+        const dummyText = dummy.word;
         if (dummyText !== correctText && !wrongOptions.includes(dummyText)) {
           wrongOptions.push(dummyText);
         }
@@ -78,17 +77,8 @@ export const EnglishGame: React.FC<EnglishGameProps> = ({ onComplete }) => {
   const handleAnswerSubmit = (userAnswer: string) => {
     if (!userAnswer.trim()) return;
 
-    let isCorrect = false;
-    let expectedAnswer = '';
-
-    if (selectedMode === 'listening_spelling') {
-      expectedAnswer = currentQuestion.word;
-      isCorrect = userAnswer.trim().toLowerCase() === expectedAnswer.toLowerCase();
-    } else {
-      expectedAnswer = currentQuestion.meaning;
-      isCorrect = userAnswer.trim() === expectedAnswer;
-    }
-
+    const expectedAnswer = currentQuestion.word;
+    const isCorrect = userAnswer.trim().toLowerCase() === expectedAnswer.toLowerCase();
     const responseTimeMs = Date.now() - questionStartTime;
 
     if (isCorrect) {
@@ -147,9 +137,9 @@ export const EnglishGame: React.FC<EnglishGameProps> = ({ onComplete }) => {
   // 1. モード選択画面
   if (!selectedMode) {
     const modes = [
-      { id: 'listening_choice', title: 'リスニング 4たくクイズ', desc: '英語の音をきいて、ただしい日本語をえらぼう (10もん)', color: 'from-amber-500 to-orange-600' },
-      { id: 'listening_spelling', title: 'リスニング スペルタイピング', desc: '英語の音をきいて、正しいえいたんごを入力しよう (10もん)', color: 'from-sky-500 to-blue-600' },
-      { id: 'word_choice', title: 'えいたんご 4たくクイズ', desc: '表示された英語を見て、ただしい意味をえらぼう (10もん)', color: 'from-purple-500 to-indigo-600' },
+      { id: 'listening_choice', title: 'Listening 4-Choice', desc: 'Listen to the sound and choose the correct English word (10 Qs)', color: 'from-amber-500 to-orange-600' },
+      { id: 'listening_spelling', title: 'Listening & Spelling', desc: 'Listen to the sound and type the English word (10 Qs)', color: 'from-sky-500 to-blue-600' },
+      { id: 'word_choice', title: 'Word Recognition', desc: 'Look at the word category and choose the matching word (10 Qs)', color: 'from-purple-500 to-indigo-600' },
     ];
 
     return (
@@ -158,8 +148,8 @@ export const EnglishGame: React.FC<EnglishGameProps> = ({ onComplete }) => {
           <div className="inline-flex p-3 bg-amber-500/20 text-amber-400 rounded-xl mb-2">
             <BookOpen className="w-8 h-8" />
           </div>
-          <h2 className="text-2xl font-bold text-white mb-1">えいごクイズのモードをえらぼう</h2>
-          <p className="text-slate-400 text-sm">音声つきリスニング・えいご学習モードをえらんでね（各10問）</p>
+          <h2 className="text-2xl font-bold text-white mb-1">Select English Quiz Mode</h2>
+          <p className="text-slate-400 text-sm">Choose a listening & English practice mode (10 questions)</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -176,7 +166,7 @@ export const EnglishGame: React.FC<EnglishGameProps> = ({ onComplete }) => {
                 <p className="text-xs text-slate-400">{m.desc}</p>
               </div>
               <div className={`mt-6 p-3 rounded-xl bg-gradient-to-br ${m.color} text-white shadow-md flex items-center justify-center gap-1 font-bold text-sm group-hover:scale-105 transition`}>
-                スタート <ArrowRight className="w-4 h-4" />
+                Start <ArrowRight className="w-4 h-4" />
               </div>
             </div>
           ))}
@@ -195,12 +185,12 @@ export const EnglishGame: React.FC<EnglishGameProps> = ({ onComplete }) => {
         <div className="flex items-center gap-2">
           <BookOpen className="w-6 h-6 text-amber-400" />
           <span className="font-bold text-lg text-slate-200">
-            えいごクイズ {currentIndex + 1} / {questions.length}
+            English Quiz {currentIndex + 1} / {questions.length}
           </span>
         </div>
         <div className="flex items-center gap-4 text-sm font-semibold">
           <div className="bg-slate-700 px-3 py-1 rounded-full text-sky-400">
-            時間: {elapsedSeconds}秒
+            Time: {elapsedSeconds}s
           </div>
         </div>
       </div>
@@ -228,29 +218,29 @@ export const EnglishGame: React.FC<EnglishGameProps> = ({ onComplete }) => {
             onClick={() => speakEnglishText(currentQuestion.word)}
             className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2 rounded-xl transition shadow-md shadow-amber-500/20 active:scale-95"
           >
-            <Volume2 className="w-5 h-5" /> もういちど聴く
+            <Volume2 className="w-5 h-5" /> Listen Again
           </button>
         </div>
 
         {selectedMode === 'word_choice' ? (
           <div className="text-3xl sm:text-4xl font-extrabold text-white my-4 font-mono">
-            {currentQuestion.word}
+            {currentQuestion.category.toUpperCase()}
           </div>
         ) : (
           <div className="text-slate-400 text-sm my-4 font-medium">
-            🔊 おんせいをきいて、ただしい答えを選ぼう！
+            🔊 Listen to the audio and choose the correct English word!
           </div>
         )}
 
         {/* フィードバック表示 */}
         {feedback === 'correct' && (
           <div className="absolute inset-0 bg-emerald-950/95 flex items-center justify-center gap-2 text-emerald-400 font-extrabold text-3xl animate-bounce">
-            <CheckCircle2 className="w-10 h-10" /> せいかい！ ({currentQuestion.word})
+            <CheckCircle2 className="w-10 h-10" /> Correct! ({currentQuestion.word})
           </div>
         )}
         {feedback === 'wrong' && (
           <div className="absolute inset-0 bg-rose-950/95 flex items-center justify-center gap-2 text-rose-400 font-extrabold text-3xl">
-            <XCircle className="w-10 h-10" /> おしい！もういちど
+            <XCircle className="w-10 h-10" /> Try Again!
           </div>
         )}
       </div>
@@ -265,7 +255,7 @@ export const EnglishGame: React.FC<EnglishGameProps> = ({ onComplete }) => {
             value={inputVal}
             onChange={(e) => setInputVal(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleAnswerSubmit(inputVal)}
-            placeholder="きこえたえいたんごを入力"
+            placeholder="Type the English word here..."
             className="w-full bg-slate-900 border-2 border-amber-500/50 rounded-xl px-5 py-4 text-center text-2xl font-mono text-white focus:outline-none focus:border-amber-400 shadow-inner"
             autoFocus
           />
@@ -273,17 +263,17 @@ export const EnglishGame: React.FC<EnglishGameProps> = ({ onComplete }) => {
             onClick={() => handleAnswerSubmit(inputVal)}
             className="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 text-lg"
           >
-            けってい <ArrowRight className="w-5 h-5" />
+            Submit <ArrowRight className="w-5 h-5" />
           </button>
         </div>
       ) : (
-        /* 4択ボタン */
+        /* 4択ボタン (全て英語表記) */
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {currentOptions.map((option, idx) => (
             <button
               key={idx}
               onClick={() => handleAnswerSubmit(option)}
-              className="bg-slate-900 hover:bg-amber-600 text-white font-bold text-lg py-4 px-4 rounded-xl border border-slate-700 hover:border-amber-400 transition shadow-lg text-center"
+              className="bg-slate-900 hover:bg-amber-600 text-white font-bold text-xl py-4 px-4 rounded-xl border border-slate-700 hover:border-amber-400 transition shadow-lg text-center font-mono"
             >
               {option}
             </button>
