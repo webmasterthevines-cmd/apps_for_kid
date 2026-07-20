@@ -79,28 +79,56 @@ export const TypingGame: React.FC<TypingGameProps> = ({ onComplete }) => {
         setWordStartTime(Date.now());
       } else {
         // ゲーム完了 (10問終了)
-        const finalDuration = Math.max(1, Math.floor((Date.now() - (startTime || Date.now())) / 1000));
-        const finalAccuracy = calculateAccuracy(totalKeystrokes + 1, errorCount);
-        const totalChars = updatedDetails.reduce((sum, d) => sum + d.questionText.length, 0);
-        const finalWpm = calculateWPM(totalChars, finalDuration);
-        const finalScore = calculateScore(updatedDetails.length, finalAccuracy, finalWpm);
-
-        const payload: SaveSessionPayload = {
-          userId: 1,
-          subject: 'typing',
-          mode: 'english_words',
-          score: finalScore,
-          totalQuestions: questions.length,
-          correctCount: updatedDetails.length,
-          accuracy: finalAccuracy,
-          wpm: finalWpm,
-          durationSeconds: finalDuration,
-          details: updatedDetails,
-        };
-
-        onComplete(payload);
+        finishGame(updatedDetails);
       }
     }
+  };
+
+  const handleSkipQuestion = () => {
+    const responseTimeMs = Date.now() - wordStartTime;
+    const newDetail: QuestionDetail = {
+      questionText: currentQuestion.word,
+      userAnswer: '[SKIPPED]',
+      correctAnswer: currentQuestion.word,
+      isCorrect: false,
+      responseTimeMs,
+    };
+
+    const updatedDetails = [...details, newDetail];
+    setDetails(updatedDetails);
+    setErrorCount((prev) => prev + 1);
+
+    setInputVal('');
+    if (currentIndex + 1 < questions.length) {
+      setCurrentIndex((prev) => prev + 1);
+      setWordStartTime(Date.now());
+    } else {
+      finishGame(updatedDetails);
+    }
+  };
+
+  const finishGame = (finalDetails: QuestionDetail[]) => {
+    const finalDuration = Math.max(1, Math.floor((Date.now() - (startTime || Date.now())) / 1000));
+    const finalAccuracy = calculateAccuracy(totalKeystrokes + 1, errorCount);
+    const correctDetails = finalDetails.filter(d => d.isCorrect);
+    const totalChars = correctDetails.reduce((sum, d) => sum + d.questionText.length, 0);
+    const finalWpm = calculateWPM(totalChars, finalDuration);
+    const finalScore = calculateScore(correctDetails.length, finalAccuracy, finalWpm);
+
+    const payload: SaveSessionPayload = {
+      userId: 1,
+      subject: 'typing',
+      mode: 'english_words',
+      score: finalScore,
+      totalQuestions: questions.length,
+      correctCount: correctDetails.length,
+      accuracy: finalAccuracy,
+      wpm: finalWpm,
+      durationSeconds: finalDuration,
+      details: finalDetails,
+    };
+
+    onComplete(payload);
   };
 
   const progressPercent = Math.round(((currentIndex + 1) / questions.length) * 100);
@@ -120,7 +148,7 @@ export const TypingGame: React.FC<TypingGameProps> = ({ onComplete }) => {
             問題 {currentIndex + 1} / {questions.length}
           </span>
         </div>
-        <div className="flex items-center gap-4 text-sm font-semibold">
+        <div className="flex items-center gap-3 text-sm font-semibold">
           <div className="bg-slate-700 px-3 py-1 rounded-full text-emerald-400">
             WPM: {currentWpm}
           </div>
@@ -130,6 +158,13 @@ export const TypingGame: React.FC<TypingGameProps> = ({ onComplete }) => {
           <div className="bg-slate-700 px-3 py-1 rounded-full text-sky-400">
             時間: {elapsedSeconds}秒
           </div>
+          <button
+            type="button"
+            onClick={handleSkipQuestion}
+            className="bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white px-3 py-1 rounded-full text-xs font-bold transition border border-slate-600"
+          >
+            Skip ➔
+          </button>
         </div>
       </div>
 

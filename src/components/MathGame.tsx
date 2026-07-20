@@ -106,6 +106,51 @@ export const MathGame: React.FC<MathGameProps> = ({ onComplete }) => {
     }
   };
 
+  const handleSkipQuestion = () => {
+    if (feedback) return;
+
+    const responseTimeMs = Date.now() - questionStartTime;
+    const newDetail: QuestionDetail = {
+      questionText: currentQuestion.questionText,
+      userAnswer: '[パス]',
+      correctAnswer: currentQuestion.correctAnswer,
+      isCorrect: false,
+      responseTimeMs,
+    };
+
+    const updatedDetails = [...details, newDetail];
+    setDetails(updatedDetails);
+    setErrorCount((prev) => prev + 1);
+
+    setInputVal('');
+    if (currentIndex + 1 < questions.length) {
+      setCurrentIndex((prev) => prev + 1);
+      setQuestionStartTime(Date.now());
+    } else {
+      // 全10問完了
+      const finalDuration = Math.max(1, Math.floor((Date.now() - startTime) / 1000));
+      const totalQuestions = questions.length;
+      const correctCount = updatedDetails.filter(d => d.isCorrect).length;
+      const accuracy = Math.round((correctCount / totalQuestions) * 100) || 0;
+      const score = Math.max(0, Math.round((correctCount * 100) - (errorCount * 20) + Math.max(0, 300 - finalDuration)));
+
+      const payload: SaveSessionPayload = {
+        userId: 1,
+        subject: 'math',
+        mode: selectedMode || 'math_drill',
+        score,
+        totalQuestions,
+        correctCount,
+        accuracy,
+        wpm: 0,
+        durationSeconds: finalDuration,
+        details: updatedDetails,
+      };
+
+      onComplete(payload);
+    }
+  };
+
   const handleNumpadClick = (num: string) => {
     if (feedback) return;
     setInputVal((prev) => prev + num);
@@ -178,10 +223,17 @@ export const MathGame: React.FC<MathGameProps> = ({ onComplete }) => {
             さんすう問題 {currentIndex + 1} / {questions.length}
           </span>
         </div>
-        <div className="flex items-center gap-4 text-sm font-semibold">
+        <div className="flex items-center gap-3 text-sm font-semibold">
           <div className="bg-slate-700 px-3 py-1 rounded-full text-sky-400">
             時間: {elapsedSeconds}秒
           </div>
+          <button
+            type="button"
+            onClick={handleSkipQuestion}
+            className="bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white px-3 py-1 rounded-full text-xs font-bold transition border border-slate-600"
+          >
+            スキップ ➔
+          </button>
         </div>
       </div>
 
