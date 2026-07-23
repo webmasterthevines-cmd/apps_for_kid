@@ -43,7 +43,11 @@ export const ResultView: React.FC<ResultViewProps> = ({ payload, onRetry, onGoAn
       </div>
 
       <h2 className="text-3xl font-extrabold text-white mb-2">クリアおめでとう！</h2>
-      <p className="text-slate-400 mb-6">タイピング練習が完了しました。</p>
+      <p className="text-slate-400 mb-6">
+        {payload.subject === 'typing' && 'タイピング練習が完了しました。'}
+        {payload.subject === 'math' && 'さんすうドリルが完了しました。'}
+        {payload.subject === 'english' && 'えいごクイズが完了しました。'}
+      </p>
 
       {/* スコア・ステータスカード */}
       <div className="grid grid-cols-2 gap-4 mb-6">

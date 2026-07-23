@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { TYPING_WORDS } from '../data/typingWords';
 import { TypingWord, QuestionDetail, SaveSessionPayload } from '../types';
 import { speakEnglishText } from '../utils/speechUtils';
-import { Volume2, BookOpen, CheckCircle2, XCircle, ArrowRight } from 'lucide-react';
+import { BookOpen, CheckCircle2, XCircle, ArrowRight, RotateCcw, Delete, Volume2 } from 'lucide-react';
 
 interface EnglishGameProps {
   onComplete: (payload: SaveSessionPayload) => void;
@@ -12,52 +12,113 @@ export const EnglishGame: React.FC<EnglishGameProps> = ({ onComplete }) => {
   const [selectedMode, setSelectedMode] = useState<string | null>(null);
   const [questions, setQuestions] = useState<TypingWord[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [inputVal, setInputVal] = useState('');
   const [startTime, setStartTime] = useState<number>(Date.now());
   const [questionStartTime, setQuestionStartTime] = useState<number>(Date.now());
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [errorCount, setErrorCount] = useState(0);
   const [details, setDetails] = useState<QuestionDetail[]>([]);
   const [feedback, setFeedback] = useState<'correct' | 'wrong' | 'skipped' | null>(null);
-  const [currentOptions, setCurrentOptions] = useState<string[]>([]);
 
-  const inputRef = useRef<HTMLInputElement>(null);
+  // spelling_anagram / sentence_shuffle 用のステート
+  const [shuffledItems, setShuffledItems] = useState<string[]>([]);
+  const [selectedIndices, setSelectedIndices] = useState<number[]>([]);
+
+  // odd_one_out 用のステート
+  const [oddOneOutOptions, setOddOneOutOptions] = useState<TypingWord[]>([]);
+
+  // 配列シャッフルヘルパー
+  const shuffleArray = <T,>(array: T[]): T[] => {
+    const arr = [...array];
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  };
 
   // モード選択処理
   const handleSelectMode = (mode: string) => {
     setSelectedMode(mode);
-    const qList = [...TYPING_WORDS].sort(() => 0.5 - Math.random()).slice(0, 10);
+    let filteredWords = [...TYPING_WORDS];
+
+    if (mode === 'spelling_anagram') {
+      // 英文以外の単語
+      filteredWords = TYPING_WORDS.filter((w) => w.category !== 'sentence');
+    } else if (mode === 'sentence_shuffle') {
+      // 英文のみ
+      filteredWords = TYPING_WORDS.filter((w) => w.category === 'sentence');
+    } else if (mode === 'odd_one_out') {
+      // 英文以外の単語
+      filteredWords = TYPING_WORDS.filter((w) => w.category !== 'sentence');
+    }
+
+    const qList = filteredWords.sort(() => 0.5 - Math.random()).slice(0, 10);
     setQuestions(qList);
     setStartTime(Date.now());
     setQuestionStartTime(Date.now());
+    setCurrentIndex(0);
+    setDetails([]);
+    setErrorCount(0);
   };
 
-  // 問題更新時に選択肢生成 ＆ 自動音声再生
+  const currentQuestion = questions[currentIndex];
+
+  // 問題更新時のデータ初期化
   useEffect(() => {
     if (!selectedMode || questions.length === 0) return;
     const currentQ = questions[currentIndex];
+    setSelectedIndices([]);
 
-    // 初回音声発話
-    speakEnglishText(currentQ.word);
-
-    // 4択クイズの選択肢生成 (日本語訳を使わず全て英語表記)
-    if (selectedMode === 'listening_choice' || selectedMode === 'word_choice') {
-      const correctText = currentQ.word;
-      
-      const wrongOptions: string[] = [];
-      while (wrongOptions.length < 3) {
-        const dummy = TYPING_WORDS[Math.floor(Math.random() * TYPING_WORDS.length)];
-        const dummyText = dummy.word;
-        if (dummyText !== correctText && !wrongOptions.includes(dummyText)) {
-          wrongOptions.push(dummyText);
-        }
+    if (selectedMode === 'spelling_anagram') {
+      // アルファベットをシャッフル
+      const letters = currentQ.word.split('');
+      let shuffled = shuffleArray(letters);
+      while (shuffled.join('') === currentQ.word && letters.length > 1) {
+        shuffled = shuffleArray(letters);
       }
-      const opts = [correctText, ...wrongOptions].sort(() => 0.5 - Math.random());
-      setCurrentOptions(opts);
+      setShuffledItems(shuffled);
+    } else if (selectedMode === 'sentence_shuffle') {
+      // 単語（スペース区切り）をシャッフル
+      const words = currentQ.word.split(' ');
+      let shuffled = shuffleArray(words);
+      while (shuffled.join(' ') === currentQ.word && words.length > 1) {
+        shuffled = shuffleArray(words);
+      }
+      setShuffledItems(shuffled);
+    } else if (selectedMode === 'odd_one_out') {
+      // 仲間はずれ（3つが同カテゴリ、1つが異カテゴリ）の選択肢を作成
+      const targetCategory = currentQ.category;
+      
+      // 他のカテゴリの一覧
+      const otherCategories = Array.from(
+        new Set(
+          TYPING_WORDS.filter((w) => w.category !== 'sentence' && w.category !== targetCategory).map((w) => w.category)
+        )
+      );
+
+      let dummyWords: TypingWord[] = [];
+      if (otherCategories.length > 0) {
+        // 共通にするカテゴリを1つ決定
+        const commonCategory = otherCategories[Math.floor(Math.random() * otherCategories.length)];
+        const candidates = TYPING_WORDS.filter((w) => w.category === commonCategory);
+        dummyWords = shuffleArray(candidates).slice(0, 3);
+      }
+
+      // 万が一足りない場合は適当に補填
+      if (dummyWords.length < 3) {
+        const fallbackCandidates = TYPING_WORDS.filter(
+          (w) => w.category !== 'sentence' && w.category !== targetCategory
+        );
+        dummyWords = shuffleArray(fallbackCandidates).slice(0, 3);
+      }
+
+      // 正解（仲間はずれ）とダミーを結合してシャッフル
+      const finalOptions = shuffleArray([currentQ, ...dummyWords]);
+      setOddOneOutOptions(finalOptions);
     }
   }, [selectedMode, currentIndex, questions]);
 
-  // タイマー
+  // 全体タイマー
   useEffect(() => {
     if (!selectedMode) return;
     const interval = setInterval(() => {
@@ -66,16 +127,9 @@ export const EnglishGame: React.FC<EnglishGameProps> = ({ onComplete }) => {
     return () => clearInterval(interval);
   }, [selectedMode, startTime]);
 
-  useEffect(() => {
-    if (selectedMode === 'listening_spelling') {
-      inputRef.current?.focus();
-    }
-  }, [selectedMode, currentIndex]);
-
-  const currentQuestion = questions[currentIndex];
-
+  // 回答送信処理
   const handleAnswerSubmit = (userAnswer: string) => {
-    if (!userAnswer.trim()) return;
+    if (feedback) return;
 
     const expectedAnswer = currentQuestion.word;
     const isCorrect = userAnswer.trim().toLowerCase() === expectedAnswer.toLowerCase();
@@ -83,8 +137,11 @@ export const EnglishGame: React.FC<EnglishGameProps> = ({ onComplete }) => {
 
     if (isCorrect) {
       setFeedback('correct');
+      // 正解時は発音させる（おまけ演出）
+      speakEnglishText(expectedAnswer);
+
       const newDetail: QuestionDetail = {
-        questionText: currentQuestion.word,
+        questionText: expectedAnswer,
         userAnswer: userAnswer.trim(),
         correctAnswer: expectedAnswer,
         isCorrect: true,
@@ -96,7 +153,6 @@ export const EnglishGame: React.FC<EnglishGameProps> = ({ onComplete }) => {
 
       setTimeout(() => {
         setFeedback(null);
-        setInputVal('');
         if (currentIndex + 1 < questions.length) {
           setCurrentIndex((prev) => prev + 1);
           setQuestionStartTime(Date.now());
@@ -104,9 +160,12 @@ export const EnglishGame: React.FC<EnglishGameProps> = ({ onComplete }) => {
           // 全10問完了
           const finalDuration = Math.max(1, Math.floor((Date.now() - startTime) / 1000));
           const totalQuestions = questions.length;
-          const correctCount = updatedDetails.length;
+          const correctCount = updatedDetails.filter((d) => d.isCorrect).length;
           const accuracy = Math.round((correctCount / (correctCount + errorCount)) * 100) || 100;
-          const score = Math.max(100, Math.round((correctCount * 100) - (errorCount * 20) + Math.max(0, 300 - finalDuration)));
+          const score = Math.max(
+            100,
+            Math.round(correctCount * 100 - errorCount * 20 + Math.max(0, 300 - finalDuration))
+          );
 
           const payload: SaveSessionPayload = {
             userId: 1,
@@ -123,17 +182,18 @@ export const EnglishGame: React.FC<EnglishGameProps> = ({ onComplete }) => {
 
           onComplete(payload);
         }
-      }, 600);
+      }, 1000);
     } else {
       setFeedback('wrong');
       setErrorCount((prev) => prev + 1);
       setTimeout(() => {
         setFeedback(null);
-        setInputVal('');
-      }, 800);
+        setSelectedIndices([]); // 並べ替えの場合はリセット
+      }, 1000);
     }
   };
 
+  // スキップ処理
   const handleSkipQuestion = () => {
     if (feedback) return;
 
@@ -143,7 +203,7 @@ export const EnglishGame: React.FC<EnglishGameProps> = ({ onComplete }) => {
     const responseTimeMs = Date.now() - questionStartTime;
     const newDetail: QuestionDetail = {
       questionText: currentQuestion.word,
-      userAnswer: '[SKIPPED]',
+      userAnswer: '[パス]',
       correctAnswer: currentQuestion.word,
       isCorrect: false,
       responseTimeMs,
@@ -155,7 +215,6 @@ export const EnglishGame: React.FC<EnglishGameProps> = ({ onComplete }) => {
 
     setTimeout(() => {
       setFeedback(null);
-      setInputVal('');
       if (currentIndex + 1 < questions.length) {
         setCurrentIndex((prev) => prev + 1);
         setQuestionStartTime(Date.now());
@@ -163,9 +222,12 @@ export const EnglishGame: React.FC<EnglishGameProps> = ({ onComplete }) => {
         // 全10問完了
         const finalDuration = Math.max(1, Math.floor((Date.now() - startTime) / 1000));
         const totalQuestions = questions.length;
-        const correctCount = updatedDetails.filter(d => d.isCorrect).length;
+        const correctCount = updatedDetails.filter((d) => d.isCorrect).length;
         const accuracy = Math.round((correctCount / totalQuestions) * 100) || 0;
-        const score = Math.max(0, Math.round((correctCount * 100) - (errorCount * 20) + Math.max(0, 300 - finalDuration)));
+        const score = Math.max(
+          0,
+          Math.round(correctCount * 100 - errorCount * 20 + Math.max(0, 300 - finalDuration))
+        );
 
         const payload: SaveSessionPayload = {
           userId: 1,
@@ -182,15 +244,63 @@ export const EnglishGame: React.FC<EnglishGameProps> = ({ onComplete }) => {
 
         onComplete(payload);
       }
-    }, 1800);
+    }, 2000);
+  };
+
+  // ブロック選択処理 (並べ替え用)
+  const handleItemClick = (index: number) => {
+    if (feedback) return;
+    if (selectedIndices.includes(index)) {
+      // すでに選択されていれば解除
+      setSelectedIndices((prev) => prev.filter((i) => i !== index));
+    } else {
+      // 選択に追加
+      const nextIndices = [...selectedIndices, index];
+      setSelectedIndices(nextIndices);
+
+      // すべて選択完了したかチェック
+      if (nextIndices.length === shuffledItems.length) {
+        const delimiter = selectedMode === 'sentence_shuffle' ? ' ' : '';
+        const assembled = nextIndices.map((i) => shuffledItems[i]).join(delimiter);
+        // 少し遅延を入れて自動判定に進む
+        setTimeout(() => {
+          handleAnswerSubmit(assembled);
+        }, 150);
+      }
+    }
+  };
+
+  const handleBackspace = () => {
+    if (feedback) return;
+    setSelectedIndices((prev) => prev.slice(0, -1));
+  };
+
+  const handleReset = () => {
+    if (feedback) return;
+    setSelectedIndices([]);
   };
 
   // 1. モード選択画面
   if (!selectedMode) {
     const modes = [
-      { id: 'listening_choice', title: 'Listening 4-Choice', desc: 'Listen to the sound and choose the correct English word (10 Qs)', color: 'from-amber-500 to-orange-600' },
-      { id: 'listening_spelling', title: 'Listening & Spelling', desc: 'Listen to the sound and type the English word (10 Qs)', color: 'from-sky-500 to-blue-600' },
-      { id: 'word_choice', title: 'Word Recognition', desc: 'Look at the word category and choose the matching word (10 Qs)', color: 'from-purple-500 to-indigo-600' },
+      {
+        id: 'spelling_anagram',
+        title: 'もじならべかえ',
+        desc: 'バラバラになったアルファベットをならべかえて、ただしい英単語をつくろう！ (10もん)',
+        color: 'from-amber-500 to-orange-600',
+      },
+      {
+        id: 'sentence_shuffle',
+        title: 'えいぶんカードならべ',
+        desc: 'バラバラになった英単語カードをならべかえて、ただしい英文をつくろう！ (10もん)',
+        color: 'from-sky-500 to-blue-600',
+      },
+      {
+        id: 'odd_one_out',
+        title: 'なかまはずれさがし',
+        desc: '4つのえいたんごのなかから、グループ（なかま）がちがうものを1つえらぼう！ (10もん)',
+        color: 'from-purple-500 to-indigo-600',
+      },
     ];
 
     return (
@@ -199,8 +309,8 @@ export const EnglishGame: React.FC<EnglishGameProps> = ({ onComplete }) => {
           <div className="inline-flex p-3 bg-amber-500/20 text-amber-400 rounded-xl mb-2">
             <BookOpen className="w-8 h-8" />
           </div>
-          <h2 className="text-2xl font-bold text-white mb-1">Select English Quiz Mode</h2>
-          <p className="text-slate-400 text-sm">Choose a listening & English practice mode (10 questions)</p>
+          <h2 className="text-2xl font-bold text-white mb-1">えいごクイズのモードをえらぼう</h2>
+          <p className="text-slate-400 text-sm">チャレンジしたいクイズをタップしてください（各10問）</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -214,10 +324,12 @@ export const EnglishGame: React.FC<EnglishGameProps> = ({ onComplete }) => {
                 <h3 className="text-lg font-bold text-white group-hover:text-amber-300 transition mb-2">
                   {m.title}
                 </h3>
-                <p className="text-xs text-slate-400">{m.desc}</p>
+                <p className="text-xs text-slate-400 leading-relaxed">{m.desc}</p>
               </div>
-              <div className={`mt-6 p-3 rounded-xl bg-gradient-to-br ${m.color} text-white shadow-md flex items-center justify-center gap-1 font-bold text-sm group-hover:scale-105 transition`}>
-                Start <ArrowRight className="w-4 h-4" />
+              <div
+                className={`mt-6 p-3 rounded-xl bg-gradient-to-br ${m.color} text-white shadow-md flex items-center justify-center gap-1 font-bold text-sm group-hover:scale-105 transition`}
+              >
+                スタート <ArrowRight className="w-4 h-4" />
               </div>
             </div>
           ))}
@@ -236,19 +348,19 @@ export const EnglishGame: React.FC<EnglishGameProps> = ({ onComplete }) => {
         <div className="flex items-center gap-2">
           <BookOpen className="w-6 h-6 text-amber-400" />
           <span className="font-bold text-lg text-slate-200">
-            English Quiz {currentIndex + 1} / {questions.length}
+            えいごクイズ {currentIndex + 1} / {questions.length}
           </span>
         </div>
         <div className="flex items-center gap-3 text-sm font-semibold">
           <div className="bg-slate-700 px-3 py-1 rounded-full text-sky-400">
-            Time: {elapsedSeconds}s
+            じかん: {elapsedSeconds}秒
           </div>
           <button
             type="button"
             onClick={handleSkipQuestion}
             className="bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white px-3 py-1 rounded-full text-xs font-bold transition border border-slate-600"
           >
-            Skip ➔
+            パス ➔
           </button>
         </div>
       </div>
@@ -260,89 +372,162 @@ export const EnglishGame: React.FC<EnglishGameProps> = ({ onComplete }) => {
         />
       </div>
 
-      {/* 出題カード (音声再生機能つき) */}
+      {/* 出題・回答フィードバックエリア */}
       <div
         className={`bg-slate-900 rounded-2xl p-8 text-center border-2 transition-all duration-300 mb-6 relative overflow-hidden ${
           feedback === 'correct'
             ? 'border-emerald-500 bg-emerald-950/30'
             : feedback === 'wrong'
-            ? 'border-rose-500 bg-rose-950/30'
+            ? 'border-rose-500 bg-rose-950/30 animate-shake'
             : 'border-slate-700'
         }`}
       >
-        <div className="flex items-center justify-center gap-3 mb-2">
-          <button
-            type="button"
-            onClick={() => speakEnglishText(currentQuestion.word)}
-            className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2 rounded-xl transition shadow-md shadow-amber-500/20 active:scale-95"
-          >
-            <Volume2 className="w-5 h-5" /> Listen Again
-          </button>
-        </div>
+        <span className="inline-block bg-amber-900/60 text-amber-300 text-xs px-3 py-1 rounded-full mb-2 font-bold">
+          {selectedMode === 'spelling_anagram' && 'もじならべかえ'}
+          {selectedMode === 'sentence_shuffle' && 'えいぶんカードならべ'}
+          {selectedMode === 'odd_one_out' && 'なかまはずれさがし'}
+        </span>
 
-        {selectedMode === 'word_choice' ? (
-          <div className="text-3xl sm:text-4xl font-extrabold text-white my-4 font-mono">
-            {currentQuestion.category.toUpperCase()}
-          </div>
-        ) : (
-          <div className="text-slate-400 text-sm my-4 font-medium">
-            🔊 Listen to the audio and choose the correct English word!
+        {/* 出題情報（モード別） */}
+        {selectedMode === 'spelling_anagram' && (
+          <div className="my-4 space-y-2">
+            <div className="text-3xl font-black text-amber-300 font-mono tracking-wider">
+              {currentQuestion.meaning}
+            </div>
+            <div className="text-xs text-slate-400">（グループ: {currentQuestion.category.toUpperCase()}）</div>
           </div>
         )}
 
-        {/* フィードバック表示 */}
+        {selectedMode === 'sentence_shuffle' && (
+          <div className="my-4 space-y-2">
+            <div className="text-2xl font-black text-amber-300">
+              {currentQuestion.meaning}
+            </div>
+          </div>
+        )}
+
+        {selectedMode === 'odd_one_out' && (
+          <div className="my-4 space-y-2">
+            <div className="text-2xl font-black text-white">
+              なかまはずれの言葉はどれ？
+            </div>
+            <div className="text-xs text-slate-400">1つだけちがうグループ（なかま）の言葉があるよ。</div>
+          </div>
+        )}
+
+        {/* スピーチ再生用補助ボタン（おまけ機能） */}
+        {selectedMode !== 'odd_one_out' && (
+          <button
+            type="button"
+            onClick={() => speakEnglishText(currentQuestion.word)}
+            className="inline-flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-amber-300 text-xs px-3 py-1.5 rounded-full transition mt-1 active:scale-95"
+          >
+            <Volume2 className="w-3.5 h-3.5" /> おんせいをきく
+          </button>
+        )}
+
+        {/* 正解/不正解/パス時のフィードバック表示 */}
         {feedback === 'correct' && (
-          <div className="absolute inset-0 bg-emerald-950/95 flex items-center justify-center gap-2 text-emerald-400 font-extrabold text-3xl animate-bounce">
-            <CheckCircle2 className="w-10 h-10" /> Correct! ({currentQuestion.word})
+          <div className="absolute inset-0 bg-emerald-950/95 flex flex-col items-center justify-center gap-2 text-emerald-400 font-extrabold text-3xl animate-bounce">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="w-9 h-9" /> せいかい！
+            </div>
+            <div className="text-lg font-mono text-white tracking-wide mt-1">{currentQuestion.word}</div>
           </div>
         )}
         {feedback === 'wrong' && (
           <div className="absolute inset-0 bg-rose-950/95 flex items-center justify-center gap-2 text-rose-400 font-extrabold text-3xl">
-            <XCircle className="w-10 h-10" /> Try Again!
+            <XCircle className="w-10 h-10" /> おしい！もういちど
           </div>
         )}
         {feedback === 'skipped' && (
-          <div className="absolute inset-0 bg-sky-950/95 flex flex-col items-center justify-center gap-1 text-sky-300 font-extrabold">
-            <div className="text-xs text-sky-400">Skipped</div>
-            <div className="text-3xl text-amber-300 font-mono tracking-wider">{currentQuestion.word}</div>
-            <div className="text-xs text-slate-400">🔊 Listen & Learn!</div>
+          <div className="absolute inset-0 bg-sky-950/95 flex flex-col items-center justify-center gap-2 text-sky-300 font-extrabold">
+            <div className="text-sm text-sky-400">パスしました</div>
+            <div className="text-2xl text-amber-300 font-mono tracking-wider">こたえ：{currentQuestion.word}</div>
+            <div className="text-xs text-slate-300 mt-1 font-sans">{currentQuestion.meaning}</div>
           </div>
         )}
       </div>
 
-      {/* 解答入力エリア */}
-      {selectedMode === 'listening_spelling' ? (
-        /* スペル入力フォーム */
-        <div className="space-y-4">
-          <input
-            ref={inputRef}
-            type="text"
-            value={inputVal}
-            onChange={(e) => setInputVal(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleAnswerSubmit(inputVal)}
-            placeholder="Type the English word here..."
-            className="w-full bg-slate-900 border-2 border-amber-500/50 rounded-xl px-5 py-4 text-center text-2xl font-mono text-white focus:outline-none focus:border-amber-400 shadow-inner"
-            autoFocus
-          />
-          <button
-            onClick={() => handleAnswerSubmit(inputVal)}
-            className="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 text-lg"
-          >
-            Submit <ArrowRight className="w-5 h-5" />
-          </button>
-        </div>
-      ) : (
-        /* 4択ボタン (全て英語表記) */
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {currentOptions.map((option, idx) => (
+      {/* 解答操作エリア（モード別） */}
+      {selectedMode === 'odd_one_out' ? (
+        /* 仲間はずれ探し (4択カード) */
+        <div className="grid grid-cols-2 gap-4">
+          {oddOneOutOptions.map((option, idx) => (
             <button
               key={idx}
-              onClick={() => handleAnswerSubmit(option)}
-              className="bg-slate-900 hover:bg-amber-600 text-white font-bold text-xl py-4 px-4 rounded-xl border border-slate-700 hover:border-amber-400 transition shadow-lg text-center font-mono"
+              onClick={() => handleAnswerSubmit(option.word)}
+              className="bg-slate-900 hover:bg-amber-600/20 active:bg-amber-600/40 border border-slate-700 hover:border-amber-400 text-white rounded-xl p-5 transition text-center shadow-lg group flex flex-col items-center justify-center gap-1.5"
             >
-              {option}
+              <div className="text-2xl font-bold font-mono tracking-wide group-hover:text-amber-300 transition">
+                {option.word}
+              </div>
+              <div className="text-xs text-slate-400 font-sans">
+                {option.meaning}
+              </div>
             </button>
           ))}
+        </div>
+      ) : (
+        /* ならべかえUI (アルファベット / 単語カード) */
+        <div className="space-y-6">
+          {/* 現在組み立てている回答 */}
+          <div className="bg-slate-900 border border-slate-700 rounded-xl p-4 min-h-[72px] flex items-center justify-center flex-wrap gap-2 shadow-inner">
+            {selectedIndices.length === 0 ? (
+              <span className="text-slate-500 text-sm font-medium">下のカードをならべてね</span>
+            ) : (
+              selectedIndices.map((itemIdx) => (
+                <span
+                  key={itemIdx}
+                  onClick={() => handleItemClick(itemIdx)}
+                  className="bg-amber-500 hover:bg-amber-400 active:bg-amber-600 text-slate-950 font-extrabold px-3 py-1.5 rounded-lg text-lg font-mono tracking-wide cursor-pointer transition shadow hover:scale-105 active:scale-95"
+                >
+                  {shuffledItems[itemIdx]}
+                </span>
+              ))
+            )}
+          </div>
+
+          {/* シャッフルされたアイテムのカードプール */}
+          <div className="flex flex-wrap justify-center gap-3">
+            {shuffledItems.map((item, idx) => {
+              const isSelected = selectedIndices.includes(idx);
+              return (
+                <button
+                  key={idx}
+                  disabled={isSelected || !!feedback}
+                  onClick={() => handleItemClick(idx)}
+                  className={`px-4 py-3 rounded-xl text-lg font-mono font-bold tracking-wide transition shadow border ${
+                    isSelected
+                      ? 'bg-slate-700/30 border-slate-800/50 text-slate-600 cursor-not-allowed scale-95 opacity-40'
+                      : 'bg-slate-900 hover:bg-slate-750 border-slate-700 hover:border-amber-400/80 text-white active:scale-95'
+                  }`}
+                >
+                  {item}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* コントロールボタン */}
+          <div className="flex gap-4">
+            <button
+              type="button"
+              onClick={handleReset}
+              disabled={selectedIndices.length === 0 || !!feedback}
+              className="flex-1 bg-slate-700 hover:bg-slate-600 disabled:opacity-40 disabled:hover:bg-slate-700 text-slate-200 font-bold py-3 rounded-xl transition flex items-center justify-center gap-2 border border-slate-650"
+            >
+              <RotateCcw className="w-4 h-4" /> はじめから
+            </button>
+            <button
+              type="button"
+              onClick={handleBackspace}
+              disabled={selectedIndices.length === 0 || !!feedback}
+              className="flex-1 bg-slate-700 hover:bg-slate-600 disabled:opacity-40 disabled:hover:bg-slate-700 text-slate-200 font-bold py-3 rounded-xl transition flex items-center justify-center gap-2 border border-slate-650"
+            >
+              <Delete className="w-4 h-4" /> 1つもどす
+            </button>
+          </div>
         </div>
       )}
     </div>
